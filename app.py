@@ -871,6 +871,13 @@ class MatchEngine:
         """Gera a tabela formatada detalhada para impressão na consola e visualização no frontend."""
         sa = self.stats["A"]
         sb = self.stats["B"]
+        rem_a = f"{sa['remates_total']} ({sa['remates_baliza']})"
+        rem_b = f"{sb['remates_total']} ({sb['remates_baliza']})"
+        pas_a = f"{sa['passes_completos']}/{sa['passes_tentados']} ({sa['passes_pct']}%)"
+        pas_b = f"{sb['passes_completos']}/{sb['passes_tentados']} ({sb['passes_pct']}%)"
+        pos_a = f"{sa['posse_pct']}%"
+        pos_b = f"{sb['posse_pct']}%"
+
         linhas = [
             "=" * 74,
             f"{'ESTATÍSTICAS AVANÇADAS DO JOGO':^74}",
@@ -878,16 +885,15 @@ class MatchEngine:
             f"{sa['nome'][:24]:<25} | {'MÉTRICA':^20} | {sb['nome'][:24]:>23}",
             "-" * 74,
             f"{sa['golos']:<25} | {'Golos':^20} | {sb['golos']:>23}",
-            f"{str(sa['posse_pct']) + '%':<25} | {'Posse de Bola (%)':^20} | {str(sb['posse_pct']) + '%':>23}",
-            f"{f"{sa['remates_total']} ({sa['remates_baliza']})":<25} | {'Remates (Baliza)':^20} | {f"{sb['remates_total']} ({sb['remates_baliza']})":>23}",
+            f"{pos_a:<25} | {'Posse de Bola (%)':^20} | {pos_b:>23}",
+            f"{rem_a:<25} | {'Remates (Baliza)':^20} | {rem_b:>23}",
             f"{sa['defesas_gr']:<25} | {'Defesas do GR':^20} | {sb['defesas_gr']:>23}",
-            f"{f"{sa['passes_completos']}/{sa['passes_tentados']} ({sa['passes_pct']}%)":<25} | {'Passes (Comp/Tent %)' :^20} | {f"{sb['passes_completos']}/{sb['passes_tentados']} ({sb['passes_pct']}%)":>23}",
+            f"{pas_a:<25} | {'Passes (Comp/Tent %)':^20} | {pas_b:>23}",
             f"{sa['desarmes']:<25} | {'Desarmes':^20} | {sb['desarmes']:>23}",
             f"{sa['intercecoes']:<25} | {'Interceções':^20} | {sb['intercecoes']:>23}",
             "=" * 74
         ]
-        tabela_str = "
-".join(linhas)
+        tabela_str = "\n".join(linhas)
         print(tabela_str)
         return tabela_str
 
