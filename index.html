@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AC Travanca - Simulador Oficial Futebol de 7</title>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <style>
+        :root {
+            --azul-escuro: #081838;
+            --azul-medio: #102a5c;
+            --azul-claro: #1c499c;
+            --amarelo-ouro: #ffd000;
+            --amarelo-claro: #ffe46b;
+            --branco: #f8fafc;
+            --verde-relva-1: #2f7d32;
+            --verde-relva-2: #388e3c;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body {
+            background: radial-gradient(circle at top, var(--azul-claro) 0%, var(--azul-escuro) 75%);
+            color: var(--branco);
+            min-height: 100vh;
+            padding-bottom: 50px;
+        }
+        header {
+            background: rgba(8, 24, 56, 0.95);
+            border-bottom: 3px solid var(--amarelo-ouro);
+            padding: 16px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+        .escudo {
+            width: 44px;
+            height: 44px;
+            background: var(--amarelo-ouro);
+            color: var(--azul-escuro);
+            font-weight: 900;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid var(--branco);
+            font-size: 16px;
+        }
+        .brand h1 {
+            color: var(--amarelo-ouro);
+            font-size: 24px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .brand span {
+            font-size: 12px;
+            color: #cbd5e1;
+            display: block;
+        }
+        .top-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .btn {
+            background: var(--amarelo-ouro);
+            color: var(--azul-escuro);
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform 0.15s, background 0.2s;
+            font-size: 14px;
+        }
+        .btn:hover {
+            background: var(--amarelo-claro);
+            transform: translateY(-2px);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .btn-outline {
+            background: transparent;
+            color: var(--amarelo-ouro);
+            border: 2px solid var(--amarelo-ouro);
+        }
+        .btn-outline:hover {
+            background: rgba(255, 208, 0, 0.15);
+        }
+        .container {
+            max-width: 1120px;
+            margin: 28px auto;
+            padding: 0 18px;
+        }
+        .card {
+            background: rgba(16, 42, 92, 0.9);
+            border: 2px solid rgba(255, 208, 0, 0.45);
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+        }
+        .card h2 {
+            color: var(--amarelo-ouro);
+            margin-bottom: 12px;
+            font-size: 22px;
+        }
+        .card p {
+            color: #dbeafe;
+            line-height: 1.5;
+            margin-bottom: 14px;
+        }
+        .mode-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 22px;
+            margin-top: 20px;
+        }
+        .mode-box {
+            background: rgba(8, 24, 56, 0.75);
+            border: 2px solid var(--amarelo-ouro);
+            border-radius: 12px;
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .input-text {
+            width: 100%;
+            padding: 11px 14px;
+            border-radius: 8px;
+            border: 2px solid var(--amarelo-ouro);
+            background: var(--azul-escuro);
+            color: var(--branco);
+            font-size: 15px;
+            margin-bottom: 14px;
+        }
+        .draft-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 14px;
+            margin: 18px 0;
+        }
+        .player-card {
+            background: linear-gradient(145deg, #153573, #0b1f47);
+            border: 2px solid var(--amarelo-ouro);
+            border-radius: 12px;
+            padding: 18px 14px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.18s, box-shadow 0.18s;
+        }
+        .player-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 20px rgba(255, 208, 0, 0.35);
+            background: linear-gradient(145deg, #1e4594, #0f295c);
+        }
+        .player-card .pos-badge {
+            display: inline-block;
+            background: var(--amarelo-ouro);
+            color: var(--azul-escuro);
+            font-weight: 800;
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            margin-top: 8px;
+        }
+        .team-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        .chip {
+            background: var(--azul-escuro);
+            border: 1.5px solid var(--amarelo-ouro);
+            padding: 7px 13px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .chip span {
+            color: var(--amarelo-ouro);
+            font-size: 11px;
+            margin-left: 6px;
+        }
+
+        /* CAMPO DE FUTEBOL DE 7 INTERATIVO */
+        .tatica-selector {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 18px;
+            flex-wrap: wrap;
+        }
+        .pitch-wrapper {
+            display: grid;
+            grid-template-columns: 1.3fr 1fr;
+            gap: 24px;
+            align-items: start;
+        }
+        @media (max-width: 850px) {
+            .pitch-wrapper { grid-template-columns: 1fr; }
+        }
+        .pitch {
+            position: relative;
+            width: 100%;
+            height: 410px;
+            background: repeating-linear-gradient(
+                to right,
+                var(--verde-relva-1) 0px,
+                var(--verde-relva-1) 50px,
+                var(--verde-relva-2) 50px,
+                var(--verde-relva-2) 100px
+            );
+            border: 4px solid var(--branco);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.45);
+        }
+        .pitch-midline {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: rgba(255,255,255,0.85);
+        }
+        .pitch-circle {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 110px;
+            height: 110px;
+            border: 3px solid rgba(255,255,255,0.85);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .pitch-box-left {
+            position: absolute;
+            left: 0;
+            top: 22%;
+            height: 56%;
+            width: 18%;
+            border: 3px solid rgba(255,255,255,0.85);
+            border-left: none;
+        }
+        .pitch-box-right {
+            position: absolute;
+            right: 0;
+            top: 22%;
+            height: 56%;
+            width: 18%;
+            border: 3px solid rgba(255,255,255,0.85);
+            border-right: none;
+        }
+        .pitch-node {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            width: 58px;
+            height: 58px;
+            border-radius: 50%;
+            background: var(--amarelo-ouro);
+            color: var(--azul-escuro);
+            border: 3px solid var(--azul-escuro);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 11px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            padding: 2px;
+        }
+        .pitch-node.gk {
+            background: #b91c1c;
+            color: var(--branco);
+            border-color: var(--amarelo-ouro);
+        }
+        .pitch-node .slot-num {
+            font-size: 13px;
+            font-weight: 900;
+        }
+        .pitch-node .slot-name {
+            font-size: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 52px;
+        }
+        .slot-assign-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(8, 24, 56, 0.75);
+            padding: 9px 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border: 1px solid rgba(255, 208, 0, 0.35);
+        }
+        .slot-assign-row select {
+            background: var(--azul-escuro);
+            color: var(--branco);
+            border: 1.5px solid var(--amarelo-ouro);
+            padding: 6px 10px;
+            border-radius: 6px;
+            width: 60%;
+        }
+
+        /* TABELAS */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            background: rgba(8, 24, 56, 0.8);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        th, td {
+            padding: 11px 12px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 208, 0, 0.2);
+        }
+        th {
+            background: var(--amarelo-ouro);
+            color: var(--azul-escuro);
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 12px;
+        }
+        tr.highlight-user {
+            background: rgba(255, 208, 0, 0.25);
+            font-weight: 800;
+            color: var(--amarelo-claro);
+        }
+        .console-box {
+            background: #040d21;
+            border: 2px solid var(--amarelo-ouro);
+            border-radius: 10px;
+            padding: 16px;
+            height: 360px;
+            overflow-y: auto;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .log-golo { color: var(--amarelo-ouro); font-weight: 900; font-size: 15px; }
+        .log-defesa { color: #60a5fa; }
+        .log-perigo { color: #fb923c; }
+        .hidden { display: none !important; }
+        .badge-info {
+            background: rgba(255, 208, 0, 0.15);
+            border-left: 4px solid var(--amarelo-ouro);
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="brand">
+        <div class="escudo">ACT</div>
+        <div>
+            <h1>AC Travanca</h1>
+            <span>Simulador Oficial Futebol de 7</span>
+        </div>
+    </div>
+    <div class="top-controls">
+        <button id="btnMusica" class="btn btn-outline" onclick="alternarMusica()">🎵 Música Tranquila: OFF</button>
+        <button class="btn btn-outline" onclick="voltarMenuInicial()">🏠 Menu Principal</button>
+    </div>
+</header>
+
+<div class="container">
+
+    <!-- ECRÃ 1: ESCOLHA DO MODO DE JOGO -->
+    <div id="ecraMenu" class="card">
+        <h2>Bem-vindo ao AC Travanca!</h2>
+        <p>Constrói o teu plantel de <strong>7 jogadores</strong> (escolhendo 1 jogador por sorteio de 5 opções) e escolhe a tua formação tática. As estatísticas dos jogadores e a força das equipas são totalmente secretas!</p>
+
+        <label for="inputNomeTreinador" style="font-weight:700; color:var(--amarelo-ouro); display:block; margin-bottom:6px;">O Teu Nome de Utilizador / Treinador:</label>
+        <input id="inputNomeTreinador" class="input-text" type="text" placeholder="Ex: Mister Travanca" value="Treinador ACT" />
+
+        <div class="mode-grid">
+            <div class="mode-box">
+                <div>
+                    <h2 style="font-size:20px;">🏆 1º Modo: Jogar Offline (Liga)</h2>
+                    <p>Faz o Draft dos 7 jogadores, monta a tática e disputa a Liga a 2 voltas contra as 11 equipas adversárias. No final vês a <strong>Tabela da Liga</strong>, os <strong>Melhores Marcadores</strong> e avanças para o <strong>Top 10 Global de Todos os Utilizadores que já jogaram este jogo</strong>!</p>
+                </div>
+                <button class="btn" onclick="iniciarModoOffline()">Jogar Modo Offline</button>
+            </div>
+
+            <div class="mode-box">
+                <div>
+                    <h2 style="font-size:20px;">⚔️ 2º Modo: Jogar Online (1v1)</h2>
+                    <p>Cria uma sala privada com link único (UUID) e envia a um amigo. Fazem o Draft alternado em tempo real (WebSockets), escolhem a tática e assistem à simulação minuto a minuto do Motor Avançado!</p>
+                </div>
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="btn" onclick="criarSalaOnline()">Criar Sala & Gerar Link</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ECRÃ 2: MODO OFFLINE (DRAFT -> TÁTICA -> LIGA -> TOP 10 GLOBAL DE UTILIZADORES) -->
+    <div id="ecraOffline" class="hidden">
+
+        <!-- PASSO 1 OFFLINE: DRAFT DE 7 JOGADORES -->
+        <div id="offlinePassoDraft" class="card">
+            <h2>Modo Offline — Sorteio de Jogadores (<span id="offlineContadorEscolhas">0</span>/7)</h2>
+            <p>Escolhe <strong>1 jogador</strong> entre os 5 sorteados abaixo. Os jogadores não escolhidos podem voltar a sair nos sorteios seguintes; os escolhidos não voltam a aparecer.</p>
+
+            <div id="offlineOpcoesDraft" class="draft-grid"></div>
+
+            <h3 style="color:var(--amarelo-ouro); margin-top:16px; font-size:16px;">A Tua Equipa Atual:</h3>
+            <div id="offlineEquipaEscolhida" class="team-chips"></div>
+        </div>
+
+        <!-- PASSO 2 OFFLINE: ESCOLHA DA TÁTICA E POSICIONAMENTO 1 A 7 -->
+        <div id="offlinePassoTatica" class="card hidden">
+            <h2>Escolhe a Formação Tática e as Posições (1 a 7)</h2>
+            <div class="badge-info">
+                <strong>Atenção às Posições:</strong> Colocar um jogador fora da sua posição natural reduz os seus atributos (-5). Um jogador de campo na baliza (nº 1) fica com habilidade 40, e um Guarda-Redes fora da baliza fica com 40 a tudo!
+            </div>
+
+            <div class="tatica-selector">
+                <button id="btnTat1" class="btn" onclick="selecionarTaticaOffline(1)">Tática 1 (1-2-3-1)</button>
+                <button id="btnTat2" class="btn btn-outline" onclick="selecionarTaticaOffline(2)">Tática 2 (1-3-1-2)</button>
+                <button id="btnTat3" class="btn btn-outline" onclick="selecionarTaticaOffline(3)">Tática 3 (1-2-2-2)</button>
+            </div>
+
+            <div class="pitch-wrapper">
+                <div id="campoOffline" class="pitch">
+                    <div class="pitch-midline"></div>
+                    <div class="pitch-circle"></div>
+                    <div class="pitch-box-left"></div>
+                    <div class="pitch-box-right"></div>
+                    <div id="nodesCampoOffline"></div>
+                </div>
+
+                <div>
+                    <h3 style="color:var(--amarelo-ouro); margin-bottom:10px;">Atribuir Jogadores aos Lugares (nº 1 a nº 7):</h3>
+                    <div id="seletoresSlotsOffline"></div>
+                    <button class="btn" style="width:100%; margin-top:14px; font-size:16px;" onclick="simularLigaOffline()">⚽ Simular Liga (2 Voltas)</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PASSO 3 OFFLINE: TABELA CLASSIFICATIVA COM AS OUTRAS EQUIPAS + MELHORES MARCADORES -->
+        <div id="offlinePassoResultadosLiga" class="card hidden">
+            <h2>1º Menu Final: Classificação da Liga (2 Voltas) & Melhores Marcadores</h2>
+            <p id="resumoEpocaOffline"></p>
+
+            <div style="display:grid; grid-template-columns: 2fr 1fr; gap:20px;">
+                <div>
+                    <h3 style="color:var(--amarelo-ouro);">Tabela Classificativa Final (Todas as Equipas)</h3>
+                    <table id="tabelaLigaOffline">
+                        <thead>
+                            <tr>
+                                <th>Pos</th>
+                                <th>Equipa</th>
+                                <th>J</th>
+                                <th>V</th>
+                                <th>E</th>
+                                <th>D</th>
+                                <th>GM</th>
+                                <th>GS</th>
+                                <th>Saldo (DG)</th>
+                                <th>Pontos</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+
+                <div>
+                    <h3 style="color:var(--amarelo-ouro);">Melhores Marcadores (AC Travanca)</h3>
+                    <table id="tabelaMarcadoresOffline">
+                        <thead>
+                            <tr>
+                                <th>Jogador</th>
+                                <th>Setor</th>
+                                <th>Golos</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div style="margin-top:24px; text-align:center;">
+                <button class="btn" style="font-size:16px; padding:14px 28px;" onclick="mostrarMenuTop10Global()">
+                    🌍 Seguir para o Menu Seguinte: Top 10 Global de Todos os Utilizadores ➡️
+                </button>
+            </div>
+        </div>
+
+        <!-- PASSO 4 OFFLINE: MENU SEGUINTE - TOP 10 DE TODOS OS UTILIZADORES QUE JÁ JOGARAM ESTE JOGO -->
+        <div id="offlinePassoTop10Global" class="card hidden">
+            <h2>2º Menu Final: Top 10 Global de Todos os Utilizadores</h2>
+            <div class="badge-info">
+                <strong>🏆 Ranking Histórico Global de Jogadores Reais:</strong> Esta tabela <u>não</u> inclui as equipas do computador — compara exclusivamente a pontuação que acabaste de fazer na Liga com <strong>todos os utilizadores reais que já jogaram este jogo</strong> desde que o link foi aberto! Se não ficares no Top 10, o teu lugar exato aparece destacado imediatamente por baixo da tabela.
+            </div>
+
+            <p id="textoResumoRankingGlobal" style="font-size:16px; font-weight:700; color:var(--amarelo-claro);"></p>
+
+            <table id="tabelaTop10Global">
+                <thead>
+                    <tr>
+                        <th>Posição Global</th>
+                        <th>Utilizador / Treinador</th>
+                        <th>Pontos na Liga</th>
+                        <th>Saldo de Golos</th>
+                        <th>Golos Marcados</th>
+                        <th>Lugar na Liga</th>
+                        <th>Data</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+
+            <!-- Caixa extra caso o utilizador tenha ficado fora do Top 10 (ex: 16º lugar) -->
+            <div id="caixaForaTop10" class="card hidden" style="margin-top:16px; background:rgba(255, 208, 0, 0.18); border:2px solid var(--amarelo-ouro);">
+                <h3 style="color:var(--amarelo-ouro); margin-bottom:6px;">A Tua Posição no Ranking Global de Utilizadores:</h3>
+                <p id="textoLugarForaTop10" style="font-size:18px; font-weight:900; margin:0;"></p>
+            </div>
+
+            <div style="margin-top:20px; display:flex; gap:12px;">
+                <button class="btn btn-outline" onclick="voltarParaTabelaLiga()">⬅️ Voltar à Classificação da Liga</button>
+                <button class="btn" onclick="iniciarModoOffline()">🔄 Jogar Nova Época Offline</button>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ECRÃ 3: MODO ONLINE (SALA PRIVADA UUID + DRAFT WEBSOCKETS + MOTOR DE JOGO) -->
+    <div id="ecraOnline" class="hidden">
+        <div class="card">
+            <h2>Modo Online 1v1 — Sala <span id="spanRoomId" style="color:var(--amarelo-claro);"></span></h2>
+            <div id="caixaLinkConvite" class="badge-info">
+                Partilha este link único com o teu adversário para ele entrar na sala:<br/>
+                <input id="inputLinkConvite" class="input-text" style="margin-top:8px; margin-bottom:8px;" readonly />
+                <button class="btn" onclick="copiarLinkConvite()">📋 Copiar Link de Convite</button>
+            </div>
+            <p id="estadoSalaOnline" style="font-weight:700; font-size:16px; color:var(--amarelo-ouro);"></p>
+        </div>
+
+        <!-- DRAFT ONLINE -->
+        <div id="onlinePassoDraft" class="card hidden">
+            <h2>Sorteio Online Sincronizado — Turno: <span id="spanTurnoOnline"></span></h2>
+            <div id="onlineOpcoesDraft" class="draft-grid"></div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:18px; margin-top:16px;">
+                <div>
+                    <h3 style="color:var(--amarelo-ouro);" id="tituloEquipaP1">Equipa Jogador 1</h3>
+                    <div id="chipsEquipaP1" class="team-chips"></div>
+                </div>
+                <div>
+                    <h3 style="color:var(--amarelo-ouro);" id="tituloEquipaP2">Equipa Jogador 2</h3>
+                    <div id="chipsEquipaP2" class="team-chips"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TÁTICA ONLINE -->
+        <div id="onlinePassoTatica" class="card hidden">
+            <h2>Escolhe a Tua Formação Tática para o Jogo Online</h2>
+            <div class="tatica-selector">
+                <button id="btnOnTat1" class="btn" onclick="selecionarTaticaOnline(1)">Tática 1 (1-2-3-1)</button>
+                <button id="btnOnTat2" class="btn btn-outline" onclick="selecionarTaticaOnline(2)">Tática 2 (1-3-1-2)</button>
+                <button id="btnOnTat3" class="btn btn-outline" onclick="selecionarTaticaOnline(3)">Tática 3 (1-2-2-2)</button>
+            </div>
+
+            <div class="pitch-wrapper">
+                <div class="pitch">
+                    <div class="pitch-midline"></div>
+                    <div class="pitch-circle"></div>
+                    <div class="pitch-box-left"></div>
+                    <div class="pitch-box-right"></div>
+                    <div id="nodesCampoOnline"></div>
+                </div>
+                <div>
+                    <div id="seletoresSlotsOnline"></div>
+                    <button id="btnConfirmarTaticaOnline" class="btn" style="width:100%; margin-top:14px;" onclick="confirmarTaticaOnline()">✅ Confirmar Equipa e Tática</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SIMULAÇÃO MINUTO A MINUTO + TABELA DE ESTATÍSTICAS AVANÇADAS -->
+        <div id="onlinePassoSimulacao" class="card hidden">
+            <h2>Relato em Direto (Minuto a Minuto) — Motor de Simulação AC Travanca</h2>
+            <div id="placarOnlineAoVivo" style="font-size:26px; font-weight:900; text-align:center; color:var(--amarelo-ouro); margin:12px 0;"></div>
+            <div id="consolaNarracaoOnline" class="console-box"></div>
+
+            <div id="blocoEstatisticasFinaisOnline" class="hidden" style="margin-top:24px;">
+                <h2 style="color:var(--amarelo-ouro);">Tabela de Estatísticas Avançadas</h2>
+                <table id="tabelaStatsOnline">
+                    <thead>
+                        <tr>
+                            <th id="thEqA">Equipa A</th>
+                            <th>Métrica</th>
+                            <th id="thEqB">Equipa B</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <pre id="preTabelaConsola" style="margin-top:16px; background:#040d21; padding:14px; border-radius:8px; overflow-x:auto; color:#cbd5e1; font-size:12px;"></pre>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // =========================================================================
+    // 1. MÚSICA TRANQUILA DE FUNDO (SINTETIZADOR AMBIENTE WEB AUDIO API)
+    // =========================================================================
+    let audioCtx = null;
+    let musicaAtiva = false;
+    let intervaloAcordes = null;
+
+    function alternarMusica() {
+        const btn = document.getElementById("btnMusica");
+        if (!musicaAtiva) {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === "suspended") audioCtx.resume();
+            musicaAtiva = true;
+            btn.textContent = "🎵 Música Tranquila: ON";
+            tocarAcordeSuave();
+            intervaloAcordes = setInterval(tocarAcordeSuave, 4500);
+        } else {
+            musicaAtiva = false;
+            btn.textContent = "🎵 Música Tranquila: OFF";
+            if (intervaloAcordes) clearInterval(intervaloAcordes);
+        }
+    }
+
+    function tocarAcordeSuave() {
+        if (!musicaAtiva || !audioCtx) return;
+        const progressao = [
+            [261.63, 329.63, 392.00, 493.88], // Cmaj7
+            [220.00, 261.63, 329.63, 392.00], // Am7
+            [174.61, 220.00, 261.63, 349.23], // Fmaj7
+            [196.00, 246.94, 293.66, 392.00]  // G6
+        ];
+        const acorde = progressao[Math.floor(Math.random() * progressao.length)];
+        const agora = audioCtx.currentTime;
+
+        acorde.forEach(freq => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(freq, agora);
+
+            gain.gain.setValueAtTime(0.001, agora);
+            gain.gain.linearRampToValueAtTime(0.025, agora + 1.2);
+            gain.gain.exponentialRampToValueAtTime(0.0008, agora + 4.3);
+
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(agora);
+            osc.stop(agora + 4.4);
+        });
+    }
+
+    // =========================================================================
+    // 2. COORDENADAS DAS 3 FORMAÇÕES TÁTICAS (FIÉIS ÀS IMAGENS 1, 2 E 3 DO PDF)
+    // =========================================================================
+    const COORDENADAS_TATICAS = {
+        1: [ // Tática 1: 1 GR (1), 2 Defesas (2,3), 3 Médios (4 central, 5 e 6 laterais), 1 Avançado (7)
+            { slot: 1, label: "GR", x: 11, y: 50, gk: true },
+            { slot: 3, label: "DEF", x: 27, y: 36 },
+            { slot: 2, label: "DEF", x: 27, y: 66 },
+            { slot: 5, label: "MED L", x: 48, y: 17 },
+            { slot: 4, label: "MED C", x: 48, y: 50 },
+            { slot: 6, label: "MED L", x: 48, y: 83 },
+            { slot: 7, label: "AVA", x: 70, y: 52 }
+        ],
+        2: [ // Tática 2: 1 GR (1), 3 Defesas (4 central, 2 e 3 laterais), 1 Médio (5), 2 Avançados (6,7)
+            { slot: 1, label: "GR", x: 11, y: 50, gk: true },
+            { slot: 3, label: "DEF L", x: 34, y: 20 },
+            { slot: 4, label: "DEF C", x: 28, y: 50 },
+            { slot: 2, label: "DEF L", x: 34, y: 80 },
+            { slot: 5, label: "MED", x: 46, y: 50 },
+            { slot: 7, label: "AVA", x: 62, y: 34 },
+            { slot: 6, label: "AVA", x: 62, y: 66 }
+        ],
+        3: [ // Tática 3: 1 GR (1), 2 Defesas (4,2), 2 Médios (3,5), 2 Avançados (7,6)
+            { slot: 1, label: "GR", x: 11, y: 50, gk: true },
+            { slot: 4, label: "DEF", x: 27, y: 36 },
+            { slot: 2, label: "DEF", x: 27, y: 64 },
+            { slot: 3, label: "MED", x: 43, y: 25 },
+            { slot: 5, label: "MED", x: 43, y: 75 },
+            { slot: 7, label: "AVA", x: 61, y: 33 },
+            { slot: 6, label: "AVA", x: 61, y: 64 }
+        ]
+    };
+
+    // =========================================================================
+    // 3. LÓGICA DO MODO OFFLINE
+    // =========================================================================
+    let offlineEscolhidos = [];
+    let taticaOfflineAtual = 1;
+    let alinhamentoOffline = {};
+
+    function voltarMenuInicial() {
+        document.getElementById("ecraMenu").classList.remove("hidden");
+        document.getElementById("ecraOffline").classList.add("hidden");
+        document.getElementById("ecraOnline").classList.add("hidden");
+    }
+
+    function iniciarModoOffline() {
+        offlineEscolhidos = [];
+        taticaOfflineAtual = 1;
+        alinhamentoOffline = {};
+
+        document.getElementById("ecraMenu").classList.add("hidden");
+        document.getElementById("ecraOnline").classList.add("hidden");
+        document.getElementById("ecraOffline").classList.remove("hidden");
+
+        document.getElementById("offlinePassoDraft").classList.remove("hidden");
+        document.getElementById("offlinePassoTatica").classList.add("hidden");
+        document.getElementById("offlinePassoResultadosLiga").classList.add("hidden");
+        document.getElementById("offlinePassoTop10Global").classList.add("hidden");
+
+        atualizarChipsOffline();
+        pedirSorteioOffline();
+    }
+
+    async function pedirSorteioOffline() {
+        document.getElementById("offlineContadorEscolhas").textContent = offlineEscolhidos.length;
+        if (offlineEscolhidos.length >= 7) {
+            abrirPassoTaticaOffline();
+            return;
+        }
+        const resp = await fetch("/api/offline/sortear", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ escolhidos_ids: offlineEscolhidos.map(j => j.id) })
+        });
+        const dados = await resp.json();
+        const contentor = document.getElementById("offlineOpcoesDraft");
+        contentor.innerHTML = "";
+
+        dados.opcoes.forEach(jog => {
+            const div = document.createElement("div");
+            div.className = "player-card";
+            div.innerHTML = `
+                <div style="font-size:18px; font-weight:800;">${jog.nome}</div>
+                <div class="pos-badge">${jog.posicao}</div>
+                <div style="margin-top:10px; font-size:12px; color:#cbd5e1;">Clique para escolher</div>
+            `;
+            div.onclick = () => {
+                offlineEscolhidos.push(jog);
+                atualizarChipsOffline();
+                pedirSorteioOffline();
+            };
+            contentor.appendChild(div);
+        });
+    }
+
+    function atualizarChipsOffline() {
+        const div = document.getElementById("offlineEquipaEscolhida");
+        div.innerHTML = offlineEscolhidos.map((j, idx) =>
+            `<div class="chip">${idx + 1}. ${j.nome} <span>(${j.posicao})</span></div>`
+        ).join("");
+    }
+
+    function abrirPassoTaticaOffline() {
+        document.getElementById("offlinePassoDraft").classList.add("hidden");
+        document.getElementById("offlinePassoTatica").classList.remove("hidden");
+
+        // Preenche alinhamento inicial por defeito com os 7 jogadores escolhidos
+        for (let s = 1; s <= 7; s++) {
+            alinhamentoOffline[s] = offlineEscolhidos[s - 1].id;
+        }
+        selecionarTaticaOffline(1);
+    }
+
+    function selecionarTaticaOffline(numTatica) {
+        taticaOfflineAtual = numTatica;
+        [1, 2, 3].forEach(n => {
+            const b = document.getElementById("btnTat" + n);
+            if (n === numTatica) b.classList.remove("btn-outline");
+            else b.classList.add("btn-outline");
+        });
+        renderizarCampoESlots("nodesCampoOffline", "seletoresSlotsOffline", taticaOfflineAtual, offlineEscolhidos, alinhamentoOffline);
+    }
+
+    function renderizarCampoESlots(idNodes, idSelectors, numTatica, listaJogadores, mapaAlinhamento) {
+        const nodesDiv = document.getElementById(idNodes);
+        const selDiv = document.getElementById(idSelectors);
+        nodesDiv.innerHTML = "";
+        selDiv.innerHTML = "";
+
+        const coords = COORDENADAS_TATICAS[numTatica];
+
+        coords.slice().sort((a, b) => a.slot - b.slot).forEach(c => {
+            const jogId = Number(mapaAlinhamento[c.slot]);
+            const jogObj = listaJogadores.find(j => j.id === jogId) || listaJogadores[0];
+
+            // Nó visual no relvado
+            const node = document.createElement("div");
+            node.className = "pitch-node" + (c.gk ? " gk" : "");
+            node.style.left = c.x + "%";
+            node.style.top = c.y + "%";
+            node.innerHTML = `
+                <div class="slot-num">nº ${c.slot}</div>
+                <div class="slot-name">${jogObj ? jogObj.nome : ""}</div>
+            `;
+            nodesDiv.appendChild(node);
+
+            // Linha de seleção
+            const row = document.createElement("div");
+            row.className = "slot-assign-row";
+            const optionsHtml = listaJogadores.map(j =>
+                `<option value="${j.id}" ${j.id === jogId ? "selected" : ""}>${j.nome} (${j.posicao})</option>`
+            ).join("");
+
+            row.innerHTML = `
+                <div><strong>Posição nº ${c.slot}</strong> <span style="color:var(--amarelo-ouro); font-size:12px;">[${c.label}]</span></div>
+                <select data-slot="${c.slot}">${optionsHtml}</select>
+            `;
+            const selectEl = row.querySelector("select");
+            selectEl.onchange = (e) => {
+                const novoId = Number(e.target.value);
+                const slotAtual = Number(e.target.dataset.slot);
+                // Se outro slot já tinha este jogador, troca-os automaticamente!
+                for (let s = 1; s <= 7; s++) {
+                    if (s !== slotAtual && Number(mapaAlinhamento[s]) === novoId) {
+                        mapaAlinhamento[s] = mapaAlinhamento[slotAtual];
+                    }
+                }
+                mapaAlinhamento[slotAtual] = novoId;
+                renderizarCampoESlots(idNodes, idSelectors, numTatica, listaJogadores, mapaAlinhamento);
+            };
+            selDiv.appendChild(row);
+        });
+    }
+
+    async function simularLigaOffline() {
+        const nomeTreinador = document.getElementById("inputNomeTreinador").value.trim() || "Treinador ACT";
+        const resp = await fetch("/api/offline/simular", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                alinhamento: alinhamentoOffline,
+                tatica: taticaOfflineAtual,
+                nome_utilizador: nomeTreinador
+            })
+        });
+        const dados = await resp.json();
+        if (dados.erro) {
+            alert(dados.erro);
+            return;
+        }
+
+        document.getElementById("offlinePassoTatica").classList.add("hidden");
+        document.getElementById("offlinePassoResultadosLiga").classList.remove("hidden");
+
+        const r = dados.resumo_utilizador;
+        document.getElementById("resumoEpocaOffline").innerHTML =
+            `Treinador <strong>${r.nome_utilizador}</strong>, terminaste a Liga no <strong>${r.lugar_liga}º lugar</strong> com <strong>${r.pontos} pontos</strong> e saldo de golos de <strong>${r.saldo_golos >= 0 ? '+' + r.saldo_golos : r.saldo_golos}</strong> (${r.golos_marcados} GM / ${r.golos_sofridos} GS)!`;
+
+        // Preenche tabela da Liga
+        const tbodyLiga = document.querySelector("#tabelaLigaOffline tbody");
+        tbodyLiga.innerHTML = dados.classificacao_liga.map(eq => `
+            <tr class="${eq.eh_user ? 'highlight-user' : ''}">
+                <td>${eq.lugar}º</td>
+                <td style="text-align:left;">${eq.equipa}</td>
+                <td>${eq.jogos}</td>
+                <td>${eq.vitorias}</td>
+                <td>${eq.empates}</td>
+                <td>${eq.derrotas}</td>
+                <td>${eq.golos_marcados}</td>
+                <td>${eq.golos_sofridos}</td>
+                <td>${eq.saldo_golos >= 0 ? '+' + eq.saldo_golos : eq.saldo_golos}</td>
+                <td><strong>${eq.pontos}</strong></td>
+            </tr>
+        `).join("");
+
+        // Preenche melhores marcadores
+        const tbodyMarc = document.querySelector("#tabelaMarcadoresOffline tbody");
+        if (dados.melhores_marcadores.length === 0) {
+            tbodyMarc.innerHTML = `<tr><td colspan="3">Sem golos marcados</td></tr>`;
+        } else {
+            tbodyMarc.innerHTML = dados.melhores_marcadores.map(m => `
+                <tr>
+                    <td><strong>${m.nome}</strong></td>
+                    <td>${m.posicao}</td>
+                    <td>${m.golos} ⚽</td>
+                </tr>
+            `).join("");
+        }
+
+        // Prepara o 2º Menu: Top 10 Global de Todos os Utilizadores que Já Jogaram
+        preencherTop10GlobalUI(dados.ranking_global_utilizadores);
+    }
+
+    function preencherTop10GlobalUI(rk) {
+        const tbodyTop10 = document.querySelector("#tabelaTop10Global tbody");
+        tbodyTop10.innerHTML = rk.top_10.map(item => `
+            <tr class="${item.atual ? 'highlight-user' : ''}">
+                <td><strong>${item.lugar_global}º</strong></td>
+                <td>${item.nome_utilizador} ${item.atual ? '⭐ (A Tua Época)' : ''}</td>
+                <td><strong>${item.pontos} pts</strong></td>
+                <td>${item.saldo_golos >= 0 ? '+' + item.saldo_golos : item.saldo_golos}</td>
+                <td>${item.golos_marcados}</td>
+                <td>${item.posicao_liga}º na Liga</td>
+                <td style="font-size:12px;">${item.data_registo}</td>
+            </tr>
+        `).join("");
+
+        document.getElementById("textoResumoRankingGlobal").textContent =
+            `Total de épocas jogadas por todos os utilizadores até hoje: ${rk.total_jogadores_historico} | A tua posição histórica global: ${rk.minha_posicao_global}º lugar.`;
+
+        const caixaFora = document.getElementById("caixaForaTop10");
+        if (rk.minha_posicao_global > 10 && rk.meu_registo) {
+            caixaFora.classList.remove("hidden");
+            const m = rk.meu_registo;
+            document.getElementById("textoLugarForaTop10").textContent =
+                `${m.lugar_global}º Lugar — ${m.nome_utilizador} — ${m.pontos} Pontos | Saldo de Golos: ${m.saldo_golos >= 0 ? '+' + m.saldo_golos : m.saldo_golos} (${m.golos_marcados} GM)`;
+        } else {
+            caixaFora.classList.add("hidden");
+        }
+    }
+
+    function mostrarMenuTop10Global() {
+        document.getElementById("offlinePassoResultadosLiga").classList.add("hidden");
+        document.getElementById("offlinePassoTop10Global").classList.remove("hidden");
+    }
+
+    function voltarParaTabelaLiga() {
+        document.getElementById("offlinePassoTop10Global").classList.add("hidden");
+        document.getElementById("offlinePassoResultadosLiga").classList.remove("hidden");
+    }
+
+    // =========================================================================
+    // 4. LÓGICA DO MODO ONLINE (WEBSOCKETS + SALAS PRIVADAS UUID)
+    // =========================================================================
+    let socket = null;
+    let meuPapelOnline = null;
+    let roomIdAtual = null;
+    let minhaEquipaOnline = [];
+    let taticaOnlineAtual = 1;
+    let alinhamentoOnline = {};
+    let jaInicializouTaticaOnline = false;
+
+    async function criarSalaOnline() {
+        const resp = await fetch("/api/online/criar_sala", { method: "POST" });
+        const dados = await resp.json();
+        entrarSalaOnline(dados.room_id);
+    }
+
+    function entrarSalaOnline(roomId) {
+        roomIdAtual = roomId;
+        jaInicializouTaticaOnline = false;
+        const nomeTreinador = document.getElementById("inputNomeTreinador").value.trim() || "Treinador ACT";
+
+        document.getElementById("ecraMenu").classList.add("hidden");
+        document.getElementById("ecraOffline").classList.add("hidden");
+        document.getElementById("ecraOnline").classList.remove("hidden");
+
+        document.getElementById("spanRoomId").textContent = roomId;
+        const urlConvite = `${window.location.origin}/?sala=${roomId}`;
+        document.getElementById("inputLinkConvite").value = urlConvite;
+
+        if (!socket) {
+            socket = io();
+            configurarEventosSocket();
+        }
+        socket.emit("entrar_sala", { room_id: roomId, nome: nomeTreinador });
+    }
+
+    function copiarLinkConvite() {
+        const inp = document.getElementById("inputLinkConvite");
+        inp.select();
+        navigator.clipboard.writeText(inp.value);
+        alert("Link de convite copiado! Envia-o ao teu adversário.");
+    }
+
+    function configurarEventosSocket() {
+        socket.on("papel_atribuido", (dados) => {
+            meuPapelOnline = dados.papel;
+        });
+
+        socket.on("erro_sala", (dados) => {
+            alert(dados.mensagem);
+            voltarMenuInicial();
+        });
+
+        socket.on("atualizar_sala", (sala) => {
+            const p1 = sala.jogadores.P1;
+            const p2 = sala.jogadores.P2;
+            document.getElementById("tituloEquipaP1").textContent = `${p1.nome} (${p1.equipa.length}/7)`;
+            document.getElementById("tituloEquipaP2").textContent = `${p2.nome} (${p2.equipa.length}/7)`;
+
+            document.getElementById("chipsEquipaP1").innerHTML = p1.equipa.map(j =>
+                `<div class="chip">${j.nome} <span>(${j.posicao})</span></div>`
+            ).join("");
+            document.getElementById("chipsEquipaP2").innerHTML = p2.equipa.map(j =>
+                `<div class="chip">${j.nome} <span>(${j.posicao})</span></div>`
+            ).join("");
+
+            if (sala.estado === "AGUARDANDO_JOGADORES") {
+                document.getElementById("estadoSalaOnline").textContent = "⏳ A aguardar que o 2º jogador entre através do link de convite...";
+            } else if (sala.estado === "EM_DRAFT") {
+                document.getElementById("onlinePassoDraft").classList.remove("hidden");
+                const meuTurno = (sala.turno_atual === meuPapelOnline);
+                const nomeTurno = sala.jogadores[sala.turno_atual].nome;
+                document.getElementById("spanTurnoOnline").textContent = meuTurno ? "É A TUA VEZ DE ESCOLHER!" : `Vez de ${nomeTurno}...`;
+                document.getElementById("estadoSalaOnline").textContent = "⚽ Sorteio em curso! Escolham alternadamente os 7 jogadores.";
+
+                const contentor = document.getElementById("onlineOpcoesDraft");
+                contentor.innerHTML = "";
+                sala.opcoes_atuais.forEach(jog => {
+                    const card = document.createElement("div");
+                    card.className = "player-card";
+                    card.style.opacity = meuTurno ? "1" : "0.55";
+                    card.innerHTML = `
+                        <div style="font-size:18px; font-weight:800;">${jog.nome}</div>
+                        <div class="pos-badge">${jog.posicao}</div>
+                        <div style="margin-top:8px; font-size:12px;">${meuTurno ? 'Clique para escolher' : 'Aguarda o teu turno'}</div>
+                    `;
+                    if (meuTurno) {
+                        card.onclick = () => {
+                            socket.emit("escolher_jogador_draft", {
+                                room_id: roomIdAtual,
+                                papel: meuPapelOnline,
+                                jogador_id: jog.id
+                            });
+                        };
+                    }
+                    contentor.appendChild(card);
+                });
+            } else if (sala.estado === "ESCOLHA_TATICA") {
+                document.getElementById("onlinePassoDraft").classList.add("hidden");
+                document.getElementById("onlinePassoTatica").classList.remove("hidden");
+                document.getElementById("estadoSalaOnline").textContent = "📋 Draft concluído! Ambos os jogadores estão a definir a sua formação tática.";
+
+                minhaEquipaOnline = sala.jogadores[meuPapelOnline].equipa;
+                if (!jaInicializouTaticaOnline && minhaEquipaOnline.length === 7) {
+                    jaInicializouTaticaOnline = true;
+                    for (let s = 1; s <= 7; s++) {
+                        alinhamentoOnline[s] = minhaEquipaOnline[s - 1].id;
+                    }
+                    selecionarTaticaOnline(1);
+                }
+            }
+        });
+
+        socket.on("resultado_jogo_online", (resultado) => {
+            document.getElementById("onlinePassoTatica").classList.add("hidden");
+            document.getElementById("onlinePassoSimulacao").classList.remove("hidden");
+            document.getElementById("estadoSalaOnline").textContent = "🏟️ Jogo em direto no Motor de Simulação!";
+            reproduzirNarracaoMinutoAMinuto(resultado);
+        });
+    }
+
+    function selecionarTaticaOnline(numTatica) {
+        taticaOnlineAtual = numTatica;
+        [1, 2, 3].forEach(n => {
+            const b = document.getElementById("btnOnTat" + n);
+            if (n === numTatica) b.classList.remove("btn-outline");
+            else b.classList.add("btn-outline");
+        });
+        renderizarCampoESlots("nodesCampoOnline", "seletoresSlotsOnline", taticaOnlineAtual, minhaEquipaOnline, alinhamentoOnline);
+    }
+
+    function confirmarTaticaOnline() {
+        const btn = document.getElementById("btnConfirmarTaticaOnline");
+        btn.disabled = true;
+        btn.textContent = "⏳ Tática Confirmada! A aguardar pelo adversário...";
+        socket.emit("submeter_tatica_online", {
+            room_id: roomIdAtual,
+            papel: meuPapelOnline,
+            tatica: taticaOnlineAtual,
+            alinhamento: alinhamentoOnline
+        });
+    }
+
+    function reproduzirNarracaoMinutoAMinuto(resultado) {
+        const consola = document.getElementById("consolaNarracaoOnline");
+        const placar = document.getElementById("placarOnlineAoVivo");
+        const blocoStats = document.getElementById("blocoEstatisticasFinaisOnline");
+        consola.innerHTML = "";
+        blocoStats.classList.add("hidden");
+
+        const sa = resultado.estatisticas.A;
+        const sb = resultado.estatisticas.B;
+        let golosA = 0;
+        let golosB = 0;
+        placar.textContent = `${sa.nome} 0 - 0 ${sb.nome}`;
+
+        const eventos = resultado.narracao;
+        let idx = 0;
+
+        const timer = setInterval(() => {
+            if (idx >= eventos.length) {
+                clearInterval(timer);
+                placar.textContent = `FINAL: ${sa.nome} ${sa.golos} - ${sb.golos} ${sb.nome}`;
+                mostrarTabelaEstatisticasOnline(resultado);
+                return;
+            }
+            const ev = eventos[idx++];
+            const p = document.createElement("div");
+            if (ev.tipo === "GOLO") p.className = "log-golo";
+            else if (ev.tipo === "DEFESA" || ev.tipo === "DEFESA_GR") p.className = "log-defesa";
+            else if (ev.tipo === "PERIGO") p.className = "log-perigo";
+            p.textContent = ev.texto;
+            consola.appendChild(p);
+            consola.scrollTop = consola.scrollHeight;
+        }, 350);
+    }
+
+    function mostrarTabelaEstatisticasOnline(resultado) {
+        const blocoStats = document.getElementById("blocoEstatisticasFinaisOnline");
+        blocoStats.classList.remove("hidden");
+
+        const sa = resultado.estatisticas.A;
+        const sb = resultado.estatisticas.B;
+        document.getElementById("thEqA").textContent = sa.nome;
+        document.getElementById("thEqB").textContent = sb.nome;
+
+        const metricas = [
+            ["Golos", sa.golos, sb.golos],
+            ["Posse de Bola (%)", `${sa.posse_pct}%`, `${sb.posse_pct}%`],
+            ["Remates (Totais / à Baliza)", `${sa.remates_total} (${sa.remates_baliza})`, `${sb.remates_total} (${sb.remates_baliza})`],
+            ["Defesas do Guarda-Redes", sa.defesas_gr, sb.defesas_gr],
+            ["Passes (Completos/Tentados e %)", `${sa.passes_completos}/${sa.passes_tentados} (${sa.passes_pct}%)`, `${sb.passes_completos}/${sb.passes_tentados} (${sb.passes_pct}%)`],
+            ["Desarmes", sa.desarmes, sb.desarmes],
+            ["Interceções", sa.intercecoes, sb.intercecoes]
+        ];
+
+        const tbody = document.querySelector("#tabelaStatsOnline tbody");
+        tbody.innerHTML = metricas.map(m => `
+            <tr>
+                <td><strong>${m[1]}</strong></td>
+                <td>${m[0]}</td>
+                <td><strong>${m[2]}</strong></td>
+            </tr>
+        `).join("");
+
+        document.getElementById("preTabelaConsola").textContent = resultado.tabela_formatada;
+    }
+
+    // Se o utilizador abriu um link de convite (?sala=XXXX), entra diretamente na sala!
+    window.addEventListener("DOMContentLoaded", () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const salaParam = urlParams.get("sala") || "{{ sala_convite }}";
+        if (salaParam && salaParam.trim() !== "") {
+            entrarSalaOnline(salaParam.trim());
+        }
+    });
+</script>
+
+</body>
+</html>
