@@ -8,7 +8,7 @@ from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, emit, join_room
 import pandas as pd
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="templates" if os.path.exists("templates/index.html") else ".")
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'ac-travanca-secret-key-2026')
 
 # Usamos async_mode='threading' com simple-websocket para máxima compatibilidade
